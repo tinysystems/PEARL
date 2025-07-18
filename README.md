@@ -1,8 +1,8 @@
 # PEARL: Power- and Energy-Aware Multicore Intermittent Computing
 
-This is the repo associated to the paper `PEARL: Power- and Energy-Aware Multicore Intermittent Computing`, to be published at EWSN 2025.
+This is the repo associated with the paper `PEARL: Power- and Energy-Aware Multicore Intermittent Computing`, to be published at EWSN 2025.
 
-## To cite this code:
+## To cite the paper and code:
 
 ```bibtex
 @inproceedings{akhunov2025pearl,
