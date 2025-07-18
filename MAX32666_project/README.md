@@ -1,0 +1,34 @@
+# MACOP execution on MAX32666
+
+## Introduction
+
+The project is to compile and run the MACOP execution experiments on the MAX32666 dual-core planform. The execution adapts to the strength of ambient power.
+
+## Dependencies
+
+- [MAX SDK (2022)](https://analogdevicesinc.github.io/msdk/USERGUIDE/)
+- [MAX32666FTHR Evaluation Kit](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32666fthr.html#eb-overview)
+
+## Content of the Project
+
+```
+.
+├── README.md       : This file
+├── .settings       : Eclips settings
+├── .vscode         : VSCode settings
+├── build           : Built files
+├── config.h        : Configuration file
+├── main.c          : Main application file
+```
+
+## How to run?
+
+```
+- Import the project to the MAX SDK
+- Connect the evaluation kit
+- Compile and run
+```
+
+## Output
+
+MACOP and Power failure count in single- and dual-core modes separately.
