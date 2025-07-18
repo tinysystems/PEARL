@@ -7,7 +7,7 @@ This is the repo associated to the paper `PEARL: Power- and Energy-Aware Multico
 ```bibtex
 @inproceedings{akhunov2025pearl,
       title={PEARL: Power- and Energy-Aware Multicore Intermittent Computing}, 
-      author={Khakim Akhunov and Eren Yildiz and Kasım Sinan Yildirim},
+      author={Khakim Akhunov and Eren Yildiz and Kasim Sinan Yildirim},
       year={2025},
       booktitle={The 22nd International Conference on Embedded Wireless Systems and Networks (EWSN'25)}
 }
