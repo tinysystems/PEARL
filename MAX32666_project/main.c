@@ -63,6 +63,7 @@
 //#include "core1.h"
 #include "mxc_device.h"
 #include "config.h"
+#include "pearllib.h"
 
 /***** Definitions *****/
 
@@ -168,14 +169,14 @@ double output1[OUTPUT_HEIGHT][OUTPUT_WIDTH];
 #define HOPS 3
 #define SINGLE_CORE_MODE 0
 #define DUAL_CORE_MODE 1
-#define LOW_LEVEL_PHEROMONE 200
-#define HIGH_LEVEL_PHEROMONE 800
-#define PHEROMONE_UP_STEP 2
-#define PHEROMONE_DOWN_STEP 600
-#define PHEROMONE_MAX_LEVEL 1000
-#define PHEROMONE_MIN_LEVEL 0
+#define LOW_LEVEL_POWER 200
+#define HIGH_LEVEL_POWER 800
+#define POWER_UP_STEP 2
+#define POWER_DOWN_STEP 600
+#define POWER_MAX_LEVEL 1000
+#define POWER_MIN_LEVEL 0
 uint8_t mode = SINGLE_CORE_MODE;
-uint16_t pheromone = PHEROMONE_MIN_LEVEL;
+uint16_t POWER = POWER_MIN_LEVEL;
 
 
 /***** Functions *****/
@@ -405,7 +406,7 @@ void restore(void){
 
 void enter_deepsleep(void){
 //	if(adaptive_mode)
-//		pheromone = pheromone < PHEROMONE_DOWN_STEP ? PHEROMONE_MIN_LEVEL : pheromone - PHEROMONE_DOWN_STEP;
+//		POWER = POWER < POWER_DOWN_STEP ? POWER_MIN_LEVEL : POWER - POWER_DOWN_STEP;
 	printf("Entering DEEPSLEEP mode. Count - %d\n", backupData.count);
 	//setTrigger(0);
 	while (MXC_UART_ReadyForSleep(MXC_UART_GET_UART(CONSOLE_UART)) != E_NO_ERROR) {}
@@ -418,7 +419,7 @@ void enter_deepsleep(void){
 
 void enter_backup(void){
 	if(adaptive_mode)
-		pheromone = pheromone < PHEROMONE_DOWN_STEP ? PHEROMONE_MIN_LEVEL : pheromone - PHEROMONE_DOWN_STEP;
+		POWER = POWER < POWER_DOWN_STEP ? POWER_MIN_LEVEL : POWER - POWER_DOWN_STEP;
 	backup_mode = 0;
 	pow_fails++;
 	checkpoint();
@@ -782,12 +783,12 @@ int main(void)
 
 	MXC_RTC_Start();
 	while(1){
-		pheromone = pheromone + PHEROMONE_UP_STEP >= PHEROMONE_MAX_LEVEL ? PHEROMONE_MAX_LEVEL : pheromone + PHEROMONE_UP_STEP;
-		//printf("Pheromone = %d\n", pheromone);
-		if(mode == SINGLE_CORE_MODE && pheromone >= HIGH_LEVEL_PHEROMONE) {
+		POWER = POWER + POWER_UP_STEP >= POWER_MAX_LEVEL ? POWER_MAX_LEVEL : POWER + POWER_UP_STEP;
+		//printf("POWER = %d\n", POWER);
+		if(mode == SINGLE_CORE_MODE && POWER >= HIGH_LEVEL_POWER) {
 			switchToDualCoreMode(gpio_out_single, gpio_out_dual);
 			Start_Core1();
-		} else if (mode == DUAL_CORE_MODE && pheromone <= LOW_LEVEL_PHEROMONE) {
+		} else if (mode == DUAL_CORE_MODE && POWER <= LOW_LEVEL_POWER) {
 			Stop_Core1();
 			switchToSingleCoreMode(gpio_out_single, gpio_out_dual);
 		}

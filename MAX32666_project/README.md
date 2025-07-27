@@ -16,7 +16,6 @@ The project is to compile and run the MACOP execution experiments on the MAX3266
 ├── README.md       : This file
 ├── .settings       : Eclips settings
 ├── .vscode         : VSCode settings
-├── build           : Built files
 ├── config.h        : Configuration file
 ├── main.c          : Main application file
 ```
