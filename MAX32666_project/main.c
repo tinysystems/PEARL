@@ -50,18 +50,19 @@
 #include "rtc.h"
 #include "icc.h"
 #include "simo.h"
-#include "pb.h"
+//#include "pb.h"
 #include "uart.h"
-#include "led.h"
+//#include "led.h"
 #include "mxc_delay.h"
 #include "flc.h"
 #include "flc_regs.h"
 #include "gcr_regs.h"
 #include "sdhc.h"
-#include "example_config.h"
 #include "tmr.h"
 #include "rtc.h"
-#include "core1.h"
+//#include "core1.h"
+#include "mxc_device.h"
+#include "config.h"
 
 /***** Definitions *****/
 
@@ -290,10 +291,10 @@ void recoverFromDeepSleep(void)
 volatile int sleep_mode = 0;
 volatile int backup_mode = 0;
 volatile int adaptive_mode = 0;
-static void enter_deepsleep_isr(){
+static void enter_deepsleep_isr(void* arg){
 	sleep_mode = 1;
 }
-static void enter_backup_isr(){
+static void enter_backup_isr(void* arg){
 	backup_mode = 1;
 }
 
@@ -380,7 +381,7 @@ volatile uint32_t pow_fails = 0;
 
 #define FLASH1_BACKUP_ADDR 	MXC_FLASH1_MEM_BASE+4
 
-void checkpoint(){
+void checkpoint(void){
 	uint8_t it = 10;
 	while(it){
 		MXC_FLC_PageErase(FLASH1_BACKUP_ADDR);
@@ -391,7 +392,7 @@ void checkpoint(){
 	printf("Checkpoint\n");
 }
 
-void restore(){
+void restore(void){
 	uint8_t it = 10;
 	while(it){
 		MXC_FLC_Read(FLASH1_BACKUP_ADDR, &backupData, sizeof(backupData));
@@ -402,7 +403,7 @@ void restore(){
 	printf("CNT after restore = %d\n", backupData.count);
 }
 
-void enter_deepsleep(){
+void enter_deepsleep(void){
 //	if(adaptive_mode)
 //		pheromone = pheromone < PHEROMONE_DOWN_STEP ? PHEROMONE_MIN_LEVEL : pheromone - PHEROMONE_DOWN_STEP;
 	printf("Entering DEEPSLEEP mode. Count - %d\n", backupData.count);
@@ -415,7 +416,7 @@ void enter_deepsleep(){
 	sleep_mode = 0;
 }
 
-void enter_backup(){
+void enter_backup(void){
 	if(adaptive_mode)
 		pheromone = pheromone < PHEROMONE_DOWN_STEP ? PHEROMONE_MIN_LEVEL : pheromone - PHEROMONE_DOWN_STEP;
 	backup_mode = 0;
@@ -463,8 +464,8 @@ int main(void)
     printf("1. This example reads P1.10 (SW1) and outputs the same state onto P0.29 (LED0).\n");
     printf("2. An interrupt is set up on P0.16. When interrupt occurs P0.30 (LED1) toggles.\n\n");
 
-    PB_RegisterCallback(0, (pb_callback)buttonHandler);
-    MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
+    //PB_RegisterCallback(0, (pb_callback)buttonHandler);
+    //MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
 
 //    /* Setup interrupt status pin as an output so we can toggle it on each interrupt. */
 //    gpio_interrupt_status.port = MXC_GPIO_PORT_INTERRUPT_STATUS;
@@ -505,7 +506,7 @@ int main(void)
     gpio_interrupt_sleep.pad = MXC_GPIO_PAD_PULL_UP;
     gpio_interrupt_sleep.func = MXC_GPIO_FUNC_IN;
     gpio_interrupt_sleep.vssel = MXC_GPIO_VSSEL_VDDIO;
-    MXC_GPIO_RegisterCallback(&gpio_interrupt_sleep, enter_deepsleep_isr, NULL);
+    MXC_GPIO_RegisterCallback(&gpio_interrupt_sleep, &enter_deepsleep_isr, NULL);
     MXC_GPIO_IntConfig(&gpio_interrupt_sleep, MXC_GPIO_INT_FALLING);
     MXC_GPIO_EnableInt(gpio_interrupt_sleep.port, gpio_interrupt_sleep.mask);
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(MXC_GPIO_PORT_INTERRUPT_IN_DEEPSLEEP)));
@@ -515,7 +516,7 @@ int main(void)
     gpio_interrupt_backup.pad = MXC_GPIO_PAD_PULL_UP;
     gpio_interrupt_backup.func = MXC_GPIO_FUNC_IN;
     gpio_interrupt_backup.vssel = MXC_GPIO_VSSEL_VDDIO;
-    MXC_GPIO_RegisterCallback(&gpio_interrupt_backup, enter_backup_isr, NULL);
+    MXC_GPIO_RegisterCallback(&gpio_interrupt_backup, &enter_backup_isr, NULL);
     MXC_GPIO_IntConfig(&gpio_interrupt_backup, MXC_GPIO_INT_FALLING);
     MXC_GPIO_EnableInt(gpio_interrupt_backup.port, gpio_interrupt_backup.mask);
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(MXC_GPIO_PORT_INTERRUPT_IN_BACKUP)));
@@ -587,8 +588,8 @@ int main(void)
 //
 //
 //    MXC_RTC_Stop();
-//	int sss = MXC_RTC_GetSecond();
-//	int ssss = MXC_RTC_GetSubSecond();
+//	int sss = MXC_RTC_GetSeconds();
+//	int ssss = MXC_RTC_GetSubSeconds();
 //	printf("P = %f\n", pwr[0]);
 //	printf("sss = %d, ssss = %d\n", sss, ssss);
 //
@@ -622,7 +623,7 @@ int main(void)
 
 //	volatile uint32_t c = 0;
 //	volatile uint32_t t;
-	volatile uint8_t sec;
+	uint32_t sec;
 	volatile uint32_t macops;
 #if SINGLE_CORE_EXPERIMENT
 	//MXC_TMR_Init(MXC_TMR0, &tmr);
@@ -666,10 +667,11 @@ int main(void)
     	}
     	//MXC_TMR_Stop(MXC_TMR0);
 
-    	if (MXC_RTC_GetSecond() >= 60){
+    	MXC_RTC_GetSeconds(&sec);
+    	if (sec >= 60){
     		MXC_RTC_Stop();
-    		sec = MXC_RTC_GetSecond();
-    		sec += (MXC_RTC_GetSubSecond()/4096.0);
+    		MXC_RTC_GetSeconds(&sec);
+    		sec += (sec/4096.0);
     		macops = (backupData.count)/sec;
     		break;
     	}
@@ -705,7 +707,7 @@ int main(void)
 
 	switchToDualCoreMode(gpio_out_single, gpio_out_dual);
 	MXC_RTC_Start();
-	Core1_Start();
+	Start_Core1();
 	while(1){
 		uint8_t i = 0;
     	for(; i < (OUTPUT_HEIGHT/2); i++){
@@ -722,13 +724,13 @@ int main(void)
     					backupData.m = m;
     					after_restore = 0;
     					if (sleep_mode){
-    						Core1_Stop();
+    						Stop_Core1();
     						enter_deepsleep();
-    						Core1_Start();
+    						Start_Core1();
     					} else if(backup_mode){
-    						Core1_Stop();
+    						Stop_Core1();
     						enter_backup();
-    						Core1_Start();
+    						Start_Core1();
     					} else{
     						sum += (double) kernel[n][m] * (double) input[n+i][m+j];
     					}
@@ -739,11 +741,12 @@ int main(void)
     			backupData.count++;
     		}
     	}
-    	if (MXC_RTC_GetSecond() >= 60){
+    	MXC_RTC_GetSeconds(&sec);
+    	if (sec >= 60){
     		MXC_RTC_Stop();
-			Core1_Stop();
-    		sec = MXC_RTC_GetSecond();
-    		sec += (MXC_RTC_GetSubSecond()/4096.0);
+			Stop_Core1();
+    		MXC_RTC_GetSeconds(&sec);
+    		sec += (sec/4096.0);
     		macops = (backupData.count)/sec;
     		break;
     	}
@@ -783,9 +786,9 @@ int main(void)
 		//printf("Pheromone = %d\n", pheromone);
 		if(mode == SINGLE_CORE_MODE && pheromone >= HIGH_LEVEL_PHEROMONE) {
 			switchToDualCoreMode(gpio_out_single, gpio_out_dual);
-			Core1_Start();
+			Start_Core1();
 		} else if (mode == DUAL_CORE_MODE && pheromone <= LOW_LEVEL_PHEROMONE) {
-			Core1_Stop();
+			Stop_Core1();
 			switchToSingleCoreMode(gpio_out_single, gpio_out_dual);
 		}
 
@@ -805,13 +808,13 @@ int main(void)
     					backupData.m = m;
     					after_restore = 0;
     					if (sleep_mode){
-    						if (mode == DUAL_CORE_MODE) Core1_Stop();
+    						if (mode == DUAL_CORE_MODE) Stop_Core1();
     						enter_deepsleep();
-    						if (mode == DUAL_CORE_MODE) Core1_Start();
+    						if (mode == DUAL_CORE_MODE) Start_Core1();
     					} else if(backup_mode){
-    						if (mode == DUAL_CORE_MODE) Core1_Stop();
+    						if (mode == DUAL_CORE_MODE) Stop_Core1();
     						enter_backup();
-    						if (mode == DUAL_CORE_MODE) Core1_Start();
+    						if (mode == DUAL_CORE_MODE) Start_Core1();
     					} else{
     						sum += (double) kernel[n][m] * (double) input[n+i][m+j];
     					}
@@ -822,11 +825,12 @@ int main(void)
     			if (mode == DUAL_CORE_MODE) backupData.count++;
     		}
     	}
-    	if (MXC_RTC_GetSecond() >= 60){
+    	MXC_RTC_GetSeconds(&sec);
+    	if (sec >= 60){
         	MXC_RTC_Stop();
-        	if (mode == DUAL_CORE_MODE) Core1_Stop();
-    		sec = MXC_RTC_GetSecond();
-    		sec += (MXC_RTC_GetSubSecond()/4096.0);
+        	if (mode == DUAL_CORE_MODE) Stop_Core1();
+    		MXC_RTC_GetSeconds(&sec);
+    		sec += (sec/4096.0);
     		macops = (backupData.count)/sec;
     		break;
     	}
@@ -850,7 +854,7 @@ int main(void)
     return 0;
 }
 
-int Core1_Main(){
+int Core1_Main(void){
 	core1_count = 0;
 
 	while(1){
