@@ -23,8 +23,8 @@ PEARL power-aware scaling algorithm switches to the most performant multi-core e
 
 During the execution of the MAC operations on MAX32666, we track the voltage of the capacitor, locating the power source at different distance from the energy harvester, as shown in the figure below. For the AD AdaMICA and AD PEARL modes, the yellow and red fractions are executed in the 1C and 2C modes, respectively. Red dots denote power failures.
 
-<img src="img/short_distance.png" width="300">
-<img src="img/long_distance.png" width="300">
+<img src="img/short_distance.jpg" width="300">
+<img src="img/long_distance.jpg" width="300">
 
 <img src="img/macop_test.png" width="300">
 
