@@ -45,7 +45,7 @@ Please find more details in the article.
 
 ### Acknowledgments
 
-<a href="https://www.unitn.it/"><img src="unitn_logo.png" width="300px"></a> 
+<a href="https://www.unitn.it/"><img src="img/unitn_logo.png" width="300px"></a> 
 
 ### Copyright
 
