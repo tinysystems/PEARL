@@ -21,7 +21,10 @@ PEARL power-aware scaling algorithm switches to the most performant multi-core e
 
 ### Capacitor Voltage Tracking in the Real-hardware Experimental Setup
 
-During the execution of the MAC operations on MAX32666, we track the voltage of the capacitor, as shown in the figure below. For the AD AdaMICA and AD PEARL modes, the yellow and red fractions are executed in the 1C and 2C modes, respectively. Red dots denote power failures.
+During the execution of the MAC operations on MAX32666, we track the voltage of the capacitor, locating the power source at different distance from the energy harvester, as shown in the figure below. For the AD AdaMICA and AD PEARL modes, the yellow and red fractions are executed in the 1C and 2C modes, respectively. Red dots denote power failures.
+
+<img src="img/short_distance.png" width="300">
+<img src="img/long_distance.png" width="300">
 
 <img src="img/macop_test.png" width="300">
 
@@ -29,8 +32,21 @@ Positioning the RF transmitter 20cm away from the receiver does not make any cha
 
 Please find more details in the article.
 
-### Citation (BibTeX)
+### To cite the paper and code:
 
+```bibtex
+@inproceedings{akhunov2025pearl,
+      title={PEARL: Power- and Energy-Aware Multicore Intermittent Computing}, 
+      author={Khakim Akhunov, Eren Yildiz and Kasim Sinan Yildirim},
+      year={2025},
+      booktitle={The 22nd International Conference on Embedded Wireless Systems and Networks (EWSN'25)}
+}
 ```
-will come soon ...
-```
+
+### Acknowledgments
+
+<a href="https://www.unitn.it/"><img src="unitn_logo.png" width="300px"></a> 
+
+### Copyright
+
+MIT Licence or otherwise specified. See [license](./LICENSE.txt) file for details.

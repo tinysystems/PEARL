@@ -1,69 +1,6 @@
-/**
- * @file        main.c
- * @brief       GPIO Example
- * @details
- */
-
-/******************************************************************************
- * Copyright (C) 2022 Maxim Integrated Products, Inc., All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL MAXIM INTEGRATED BE LIABLE FOR ANY CLAIM, DAMAGES
- * OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- *
- * Except as contained in this notice, the name of Maxim Integrated
- * Products, Inc. shall not be used except as stated in the Maxim Integrated
- * Products, Inc. Branding Policy.
- *
- * The mere transfer of this software does not imply any licenses
- * of trade secrets, proprietary technology, copyrights, patents,
- * trademarks, maskwork rights, or any other form of intellectual
- * property whatsoever. Maxim Integrated Products, Inc. retains all
- * ownership rights.
- *
- ******************************************************************************/
 
 /***** Includes *****/
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include "mxc_device.h"
-#include "mxc_errors.h"
-#include "nvic_table.h"
-#include "board.h"
-#include "gpio.h"
-#include "lp.h"
-#include "rtc.h"
-#include "icc.h"
-#include "simo.h"
-//#include "pb.h"
-#include "uart.h"
-//#include "led.h"
-#include "mxc_delay.h"
-#include "flc.h"
-#include "flc_regs.h"
-#include "gcr_regs.h"
-#include "sdhc.h"
-#include "tmr.h"
-#include "rtc.h"
-//#include "core1.h"
-#include "mxc_device.h"
-#include "config.h"
-#include "pearllib.h"
+#include "includes/pearllib/pearllib.h"
 
 /***** Definitions *****/
 
@@ -166,32 +103,7 @@ double output[OUTPUT_HEIGHT][OUTPUT_WIDTH];
 
 double output1[OUTPUT_HEIGHT][OUTPUT_WIDTH];
 
-#define HOPS 3
-#define SINGLE_CORE_MODE 0
-#define DUAL_CORE_MODE 1
-#define LOW_LEVEL_POWER 200
-#define HIGH_LEVEL_POWER 800
-#define POWER_UP_STEP 2
-#define POWER_DOWN_STEP 600
-#define POWER_MAX_LEVEL 1000
-#define POWER_MIN_LEVEL 0
-uint8_t mode = SINGLE_CORE_MODE;
-uint16_t POWER = POWER_MIN_LEVEL;
-
-
-/***** Functions *****/
-//static void gpio_isr(void *cbdata)
-//{
-//    mxc_gpio_cfg_t *cfg = cbdata;
-//    MXC_GPIO_OutToggle(cfg->port, cfg->mask);
-//}
-
-/*
- *  Switch the system clock to the HIRC / 4
- *
- *  Enable the HIRC, set the divide ration to /4, and disable the 96 MHz oscillator.
- */
-
+#define HOPS 3 //For debugging
 
 volatile int buttonPressed = 0;
 void buttonHandler(void *pb)
@@ -219,79 +131,6 @@ void setTrigger(int waitForTrigger)
 
 }
 
-void switchToHIRCD4(void)
-{
-    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_PSC, MXC_S_GCR_CLKCN_PSC_DIV4);
-    MXC_GCR->clkcn |= MXC_F_GCR_CLKCN_HIRC_EN;
-    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_CLKSEL, MXC_S_GCR_CLKCN_CLKSEL_HIRC);
-    /* Disable unused clocks */
-    while (!(MXC_GCR->clkcn & MXC_F_GCR_CLKCN_CKRDY)) {}
-    /* Wait for the switch to occur */
-    MXC_GCR->clkcn &= ~(MXC_F_GCR_CLKCN_HIRC96M_EN);
-    SystemCoreClockUpdate();
-}
-
-/*
- *  Switch the system clock to the HIRC96
- *
- *  Enable the HIRC, set the divide ration to /1, and disable the 60 MHz oscillator.
- */
-void switchToHIRC96(void)
-{
-    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_PSC, MXC_S_GCR_CLKCN_PSC_DIV1);
-    MXC_GCR->clkcn |= MXC_F_GCR_CLKCN_HIRC96M_EN;
-    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_CLKSEL, MXC_S_GCR_CLKCN_CLKSEL_HIRC96);
-    /* Disable unused clocks */
-    while (!(MXC_GCR->clkcn & MXC_F_GCR_CLKCN_CKRDY)) {}
-    /* Wait for the switch to occur */
-    MXC_GCR->clkcn &= ~(MXC_F_GCR_CLKCN_HIRC_EN);
-    SystemCoreClockUpdate();
-}
-
-void prepForDeepSleep(void)
-{
-    MXC_ICC_Disable();
-    MXC_LP_ICache0Shutdown();
-
-    /* Shutdown unused power domains */
-    MXC_PWRSEQ->lpcn |= MXC_F_PWRSEQ_LPCN_BGOFF;
-
-    /* Prevent SIMO soft start on wakeup */
-    MXC_LP_FastWakeupDisable();
-
-    /* Enable VDDCSWEN=1 prior to enter backup/deepsleep mode */
-    MXC_MCR->ctrl |= MXC_F_MCR_CTRL_VDDCSWEN;
-
-    switchToHIRCD4();
-
-    MXC_SIMO_SetVregO_B(810); /* Reduce VCOREB to 0.81v */
-}
-
-void recoverFromDeepSleep(void)
-{
-    /* Check to see if VCOREA is ready on  */
-    if (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {
-        /* Wait for VCOREB to be ready */
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
-
-        /* Move VCORE switch back to VCOREB */
-        MXC_MCR->ctrl = (MXC_MCR->ctrl & ~(MXC_F_MCR_CTRL_VDDCSW)) |
-                        (0x1 << MXC_F_MCR_CTRL_VDDCSW_POS);
-
-        /* Raise the VCORE_B voltage */
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
-        MXC_SIMO_SetVregO_B(1000);
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
-    }
-
-    MXC_LP_ICache0PowerUp();
-    MXC_ICC_Enable();
-
-    switchToHIRC96();
-}
-volatile int sleep_mode = 0;
-volatile int backup_mode = 0;
-volatile int adaptive_mode = 0;
 static void enter_deepsleep_isr(void* arg){
 	sleep_mode = 1;
 }
@@ -368,96 +207,12 @@ void interrupt_enabler(mxc_flc_regs_t *regs)
     regs->intr = (MXC_F_FLC_INTR_DONEIE | MXC_F_FLC_INTR_AFIE);
 }
 
-struct backup_data{
-	uint32_t count;
-	uint8_t i;
-	uint8_t j;
-	uint8_t n;
-	uint8_t m;
-};
-struct backup_data backupData;
-
-volatile int after_restore = 0;
-volatile uint32_t pow_fails = 0;
-
-#define FLASH1_BACKUP_ADDR 	MXC_FLASH1_MEM_BASE+4
-
-void checkpoint(void){
-	uint8_t it = 10;
-	while(it){
-		MXC_FLC_PageErase(FLASH1_BACKUP_ADDR);
-		MXC_FLC_Write(FLASH1_BACKUP_ADDR, sizeof(backupData), (uint32_t*)&backupData);
-		it--;
-	}
-	printf("CNT before power failure = %d\n", backupData.count);
-	printf("Checkpoint\n");
-}
-
-void restore(void){
-	uint8_t it = 10;
-	while(it){
-		MXC_FLC_Read(FLASH1_BACKUP_ADDR, &backupData, sizeof(backupData));
-		it--;
-	}
-	//after_restore = 1;
-	printf("Restore\n");
-	printf("CNT after restore = %d\n", backupData.count);
-}
-
-void enter_deepsleep(void){
-//	if(adaptive_mode)
-//		POWER = POWER < POWER_DOWN_STEP ? POWER_MIN_LEVEL : POWER - POWER_DOWN_STEP;
-	printf("Entering DEEPSLEEP mode. Count - %d\n", backupData.count);
-	//setTrigger(0);
-	while (MXC_UART_ReadyForSleep(MXC_UART_GET_UART(CONSOLE_UART)) != E_NO_ERROR) {}
-	prepForDeepSleep();
-	MXC_LP_EnterDeepSleepMode();
-	recoverFromDeepSleep();
-	printf("Waking up from DEEPSLEEP mode. Count - %d\n", backupData.count);
-	sleep_mode = 0;
-}
-
-void enter_backup(void){
-	if(adaptive_mode)
-		POWER = POWER < POWER_DOWN_STEP ? POWER_MIN_LEVEL : POWER - POWER_DOWN_STEP;
-	backup_mode = 0;
-	pow_fails++;
-	checkpoint();
-	printf("Entering BACKUP mode.\n");
-	while (MXC_UART_ReadyForSleep(MXC_UART_GET_UART(CONSOLE_UART)) != E_NO_ERROR) {}
-    prepForDeepSleep();
-    MXC_LP_EnterDeepSleepMode();
-	recoverFromDeepSleep();
-	printf("Waking up from BACKUP mode.\n");
-	restore();
-}
-
-uint32_t core1_count;
-
-void switchToSingleCoreMode(mxc_gpio_cfg_t gpio_single, mxc_gpio_cfg_t gpio_dual){
-	MXC_GPIO_OutClr(gpio_dual.port, gpio_dual.mask);
-	MXC_GPIO_OutSet(gpio_single.port, gpio_single.mask);
-	mode = SINGLE_CORE_MODE;
-	printf("Switched to SINGLE CORE MODE\n");
-}
-
-void switchToDualCoreMode(mxc_gpio_cfg_t gpio_single, mxc_gpio_cfg_t gpio_dual){
-	MXC_GPIO_OutClr(gpio_single.port, gpio_single.mask);
-	MXC_GPIO_OutSet(gpio_dual.port, gpio_dual.mask);
-	mode = DUAL_CORE_MODE;
-	printf("Switched to DUAL CORE MODE\n");
-}
-
+// main function for Core0
 int main(void)
 {
-//    mxc_gpio_cfg_t gpio_in;
-//    mxc_gpio_cfg_t gpio_out;
-	mxc_gpio_cfg_t gpio_out_single;
-	mxc_gpio_cfg_t gpio_out_dual;
     mxc_gpio_cfg_t gpio_interrupt_sleep;
     mxc_gpio_cfg_t gpio_interrupt_wakeup;
     mxc_gpio_cfg_t gpio_interrupt_backup;
-//    mxc_gpio_cfg_t gpio_interrupt_status;
 
     printf("\n\n****** GPIO Example ******\n");
     printf("Demonstrates GPIO get/set and interrupt usage\n");
@@ -465,38 +220,18 @@ int main(void)
     printf("1. This example reads P1.10 (SW1) and outputs the same state onto P0.29 (LED0).\n");
     printf("2. An interrupt is set up on P0.16. When interrupt occurs P0.30 (LED1) toggles.\n\n");
 
-    //PB_RegisterCallback(0, (pb_callback)buttonHandler);
-    //MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
-
-//    /* Setup interrupt status pin as an output so we can toggle it on each interrupt. */
-//    gpio_interrupt_status.port = MXC_GPIO_PORT_INTERRUPT_STATUS;
-//    gpio_interrupt_status.mask = MXC_GPIO_PIN_INTERRUPT_STATUS;
-//    gpio_interrupt_status.pad = MXC_GPIO_PAD_NONE;
-//    gpio_interrupt_status.func = MXC_GPIO_FUNC_OUT;
-//    gpio_interrupt_status.vssel = MXC_GPIO_VSSEL_VDDIO;
-//    MXC_GPIO_Config(&gpio_interrupt_status);
 
     /*
   *   Set up interrupt on MXC_GPIO_PORT_INTERRUPT_IN.
   *   Switch on EV kit is open when non-pressed, and grounded when pressed.  Use an internal pull-up so pin
   *     reads high when button is not pressed.
   */
-//    gpio_interrupt_sleep.port = MXC_GPIO_PORT_INTERRUPT_IN_SLEEP;
-//    gpio_interrupt_sleep.mask = MXC_GPIO_PIN_INTERRUPT_IN_SLEEP;
-//    gpio_interrupt_sleep.pad = MXC_GPIO_PAD_PULL_UP;
-//    gpio_interrupt_sleep.func = MXC_GPIO_FUNC_IN;
-//    gpio_interrupt_sleep.vssel = MXC_GPIO_VSSEL_VDDIO;
-//    MXC_GPIO_RegisterCallback(&gpio_interrupt_sleep, enter_deepsleep_isr, NULL);
-//    MXC_GPIO_IntConfig(&gpio_interrupt_sleep, MXC_GPIO_INT_FALLING);
-//    MXC_GPIO_EnableInt(gpio_interrupt_sleep.port, gpio_interrupt_sleep.mask);
-//    NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(MXC_GPIO_PORT_INTERRUPT_IN_SLEEP)));
 
     gpio_interrupt_wakeup.port = MXC_GPIO_PORT_INTERRUPT_IN_WAKEUP;
     gpio_interrupt_wakeup.mask = MXC_GPIO_PIN_INTERRUPT_IN_WAKEUP;
     gpio_interrupt_wakeup.pad = MXC_GPIO_PAD_PULL_UP;
     gpio_interrupt_wakeup.func = MXC_GPIO_FUNC_IN;
     gpio_interrupt_wakeup.vssel = MXC_GPIO_VSSEL_VDDIO;
-//    MXC_GPIO_RegisterCallback(&gpio_interrupt_wakeup, exit_deepsleep_isr, NULL);
     MXC_GPIO_IntConfig(&gpio_interrupt_wakeup, MXC_GPIO_INT_RISING);
     MXC_GPIO_EnableInt(gpio_interrupt_wakeup.port, gpio_interrupt_wakeup.mask);
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(MXC_GPIO_PORT_INTERRUPT_IN_WAKEUP)));
@@ -540,19 +275,6 @@ int main(void)
   *   Switch on EV kit is open when non-pressed, and grounded when pressed.  Use an internal pull-up so pin
   *	    reads high when button is not pressed.
   */
-//    gpio_in.port = MXC_GPIO_PORT_IN;
-//    gpio_in.mask = MXC_GPIO_PIN_IN;
-//    gpio_in.pad = MXC_GPIO_PAD_PULL_UP;
-//    gpio_in.func = MXC_GPIO_FUNC_IN;
-//    MXC_GPIO_Config(&gpio_in);
-//
-//    /* Setup output pin. */
-//    gpio_out.port = MXC_GPIO_PORT_OUT;
-//    gpio_out.mask = MXC_GPIO_PIN_OUT;
-//    gpio_out.pad = MXC_GPIO_PAD_NONE;
-//    gpio_out.func = MXC_GPIO_FUNC_OUT;
-//    //gpio_out.vssel = MXC_GPIO_VSSEL_VDDIO;
-//    MXC_GPIO_Config(&gpio_out);
 
     gpio_out_single.port = MXC_GPIO_PORT_OUT_SINGLE;
     gpio_out_single.mask = MXC_GPIO_PIN_OUT_SINGLE;
@@ -573,7 +295,7 @@ int main(void)
 
     MXC_Delay(5000);
 
-    ////***** Code for measuring time for PEARL operatioons ******///
+    ////***** Code for measuring time for PEARL operations ******///
 //    MXC_RTC_Init(0, 0);
 //    MXC_RTC_Start();
 //    volatile float pwr[] = {28};
@@ -595,35 +317,10 @@ int main(void)
 //	printf("sss = %d, ssss = %d\n", sss, ssss);
 //
 //	return 0;
-	////***** End of Code for measuring time for PEARL operatioons ******///
+	////***** End of Code for measuring time for PEARL operations ******///
 
 
-//
-//    while (1) {
-//        /* Read state of the input pin. */
-//        if (MXC_GPIO_InGet(gpio_in.port, gpio_in.mask)) {
-//            /* Input pin was high, set the output pin. */
-//            MXC_GPIO_OutSet(gpio_out.port, gpio_out.mask);
-//        } else {
-//            /* Input pin was low, clear the output pin. */
-//            MXC_GPIO_OutClr(gpio_out.port, gpio_out.mask);
-//        }
-//    }
 
-//    printf("Entering INIT DEEPSLEEP mode.\n");
-//	setTrigger(0);
-//	prepForDeepSleep();
-//	MXC_LP_EnterDeepSleepMode();
-//	recoverFromDeepSleep();
-//	printf("Waking up from INIT DEEPSLEEP mode.\n");
-
-//	mxc_tmr_cfg_t tmr;
-//    tmr.pres = TMR_PRES_1;
-//    tmr.mode = TMR_MODE_CONTINUOUS;
-//    tmr.pol = 0;
-
-//	volatile uint32_t c = 0;
-//	volatile uint32_t t;
 	uint32_t sec;
 	volatile uint32_t macops;
 #if SINGLE_CORE_EXPERIMENT
@@ -667,7 +364,7 @@ int main(void)
     		}
     	}
     	//MXC_TMR_Stop(MXC_TMR0);
-
+    	//For debugging
     	MXC_RTC_GetSeconds(&sec);
     	if (sec >= 60){
     		MXC_RTC_Stop();
@@ -694,8 +391,10 @@ int main(void)
 		printf("Waking up from PREPREFINAL DEEPSLEEP mode.\n");
 		p--;
     }
-    /****** END OF SINGLE-CORE EXECUTION ******/
+
 #endif //SINGLE_CORE_EXPERIMENT
+    /****** END OF SINGLE-CORE EXECUTION ******/
+
 
 #if DUAL_CORE_EXPERIMENT
     /****** START OF DUAL-CORE EXECUTION ******/
@@ -767,8 +466,9 @@ int main(void)
 		r--;
     }
 
-	/****** END OF DUAL-CORE EXECUTION ******/
+
 #endif //    DUAL_CORE_EXPERIMENT
+	/****** END OF DUAL-CORE EXECUTION ******/
 
 #if ADAPTIVE_EXPERIMENT
     /****** START OF ADAPTIVE EXECUTION ******/
@@ -778,21 +478,12 @@ int main(void)
     backupData.count = 0;
     MXC_RTC_Init(0, 0);
 
-	printf("Start ADAPTIVE computation\n");
+	printf("Start ADAPTIVE computation with single-core mode\n");
 	switchToSingleCoreMode(gpio_out_single, gpio_out_dual);
 
 	MXC_RTC_Start();
 	while(1){
-		POWER = POWER + POWER_UP_STEP >= POWER_MAX_LEVEL ? POWER_MAX_LEVEL : POWER + POWER_UP_STEP;
-		//printf("POWER = %d\n", POWER);
-		if(mode == SINGLE_CORE_MODE && POWER >= HIGH_LEVEL_POWER) {
-			switchToDualCoreMode(gpio_out_single, gpio_out_dual);
-			Start_Core1();
-		} else if (mode == DUAL_CORE_MODE && POWER <= LOW_LEVEL_POWER) {
-			Stop_Core1();
-			switchToSingleCoreMode(gpio_out_single, gpio_out_dual);
-		}
-
+		_begin_parallel_pearl(0);
 
 		uint8_t i = 0;
     	for(; i < (OUTPUT_HEIGHT); i++){
@@ -807,18 +498,8 @@ int main(void)
     				uint8_t m = 0;
     				for(; m < KERNEL_WIDTH; m++){
     					backupData.m = m;
-    					after_restore = 0;
-    					if (sleep_mode){
-    						if (mode == DUAL_CORE_MODE) Stop_Core1();
-    						enter_deepsleep();
-    						if (mode == DUAL_CORE_MODE) Start_Core1();
-    					} else if(backup_mode){
-    						if (mode == DUAL_CORE_MODE) Stop_Core1();
-    						enter_backup();
-    						if (mode == DUAL_CORE_MODE) Start_Core1();
-    					} else{
-    						sum += (double) kernel[n][m] * (double) input[n+i][m+j];
-    					}
+    					_end_parallel_pearl;
+    					sum += (double) kernel[n][m] * (double) input[n+i][m+j];
     				}
     			}
     			output[i][j] = sum + ((double)rand()/(double)(RAND_MAX)) * (double)0.999;
@@ -826,6 +507,7 @@ int main(void)
     			if (mode == DUAL_CORE_MODE) backupData.count++;
     		}
     	}
+    	// For debugging
     	MXC_RTC_GetSeconds(&sec);
     	if (sec >= 60){
         	MXC_RTC_Stop();
@@ -839,9 +521,12 @@ int main(void)
 
 	adaptive_mode = 0;
 	printf("Complete ADAPTIVE computation\n");
+	//Print results
 	printf("MACOPS = %d, Power failures = %d\n", macops, pow_fails);
-    /****** END OF ADAPTIVE EXECUTION ******/
+
 #endif //ADAPRIVE_EXPERIMENT
+    /****** END OF ADAPTIVE EXECUTION ******/
+
 
     while(1){
     	printf("Entering FINAL DEEPSLEEP mode.\n");
@@ -855,8 +540,8 @@ int main(void)
     return 0;
 }
 
-int Core1_Main(void){
-	core1_count = 0;
+// main function for Core1
+int main_core1(void){
 
 	while(1){
     	for(uint8_t i = (OUTPUT_HEIGHT/2)+1; i < OUTPUT_HEIGHT; i++){
@@ -868,7 +553,6 @@ int Core1_Main(void){
     				}
     			}
     			output1[i][j] = sum + ((double)rand()/(double)(RAND_MAX)) * (double)0.999;
-    			//core1_count++;
     		}
     	}
 	}

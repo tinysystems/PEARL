@@ -17,8 +17,12 @@ The project is to compile and run the MACOP execution experiments on the MAX3266
 ├── .settings       : Eclips settings
 ├── .vscode         : VSCode settings
 ├── config.h        : Configuration file
+├── pearllib.c      : Pearl library functions
 ├── main.c          : Main application file
 ```
+
+The main application file is divided into three blocks: ```DUAL_CORE_EXPERIMENT, SINGLE_CORE_EXPERIMENT, ADAPTIVE_EXPERIMENT```
+The last one uses the Pearl library macros. By default in MAX32666, all the computations happening in ```main()``` belong to ```Core0```, while the computations code for ```Core1``` is given in ```main_core1()```. 
 
 ## How to run?
 
