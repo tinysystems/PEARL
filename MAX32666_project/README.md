@@ -13,6 +13,8 @@ The project is to compile and run the MACOP execution experiments on the MAX3266
 
 ```
 .
+├── includes
+	├── pearllib.h  : Pearl library header
 ├── README.md       : This file
 ├── .settings       : Eclips settings
 ├── .vscode         : VSCode settings
