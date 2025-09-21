@@ -1,8 +1,12 @@
-##  [EWSN 2025] PEARL: Power- and Energy-Aware Multicore Intermittent Computing
+## PEARL: Power- and Energy-Aware Multicore Intermittent Computing
+
+This is the repo associated with the paper `PEARL: Power- and Energy-Aware Multicore Intermittent Computing`, presented at the [EWSN'2025](https://www.ewsn25.cs.kuleuven.be/) Conference in Leuven, Belgium. 
+
+[**Paper**](ewsn25-final20.pdf)
 
 ### Introduction
 
-This repository contains the Python simulation results and MACOP executon code on the MAX32666 platform. The extended results were presented in the paper titled PEARL: Power- and Energy-Aware Multicore Intermittent Computing and presented in THE 22ND INTERNATIONAL CONFERENCE ON EMBEDDED WIRELESS SYSTEMS AND NETWORKS in Leuven, Belgium. PEARL is a novel systems support that can make existing multicore microcontroller (MCU) platforms suitable for efficient intermittent computing. PEARL achieves this by leveraging only a three-threshold voltage tracking circuit and an external fast non-volatile memory, which multicore MCUs can smoothly interface.
+PEARL is a novel systems support that can make existing multicore microcontroller (MCU) platforms suitable for efficient intermittent computing. PEARL achieves this by leveraging only a three-threshold voltage tracking circuit and an external fast non-volatile memory, which multicore MCUs can smoothly interface.
 
 Single-core microcontrollers for intermittent computing (e.g., TI MSP430FR series) include an internal FRAM integrated into their architecture. Existing ultra-low-power dual-core MCUs can only be used for intermittent computing by connecting an external FRAM memory, introducing energy and latency overhead.
 
