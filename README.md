@@ -6,8 +6,8 @@ This is the repo associated with the paper [PEARL: Power- and Energy-Aware Multi
 
 ## Content of the Project
 
-- [PEAR MAX32666 Implementation](MAX32666_project/)
-- [PEAR Python Simulations](Python_sim/)
+- [PEARL MAX32666 Implementation](MAX32666_project/)
+- [PEARL Python Simulations](Python_sim/)
 
 ### To cite the paper and code:
 
