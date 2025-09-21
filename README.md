@@ -2,7 +2,7 @@
 
 This is the repo associated with the paper `PEARL: Power- and Energy-Aware Multicore Intermittent Computing`, presented at the [EWSN'2025](https://www.ewsn25.cs.kuleuven.be/) Conference in Leuven, Belgium. 
 
-[**Paper**](ewsn25-final20.pdf)
+[**PDF**](ewsn25-final20.pdf)
 
 ### Introduction
 
